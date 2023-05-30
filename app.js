@@ -10,7 +10,15 @@ app.use(express.json());
 app.use('/api/user', userRouter);
 
 //------------test-------------------
-app.get("/home", (req, res) => {
+app.post("/sign-in", 
+(req, res, next) => {
+    const {email, password} = req.body;
+    if(!email || !password){
+        return res.status(401).json({error : "email/password is missing"});
+    }
+    next();
+},
+(req, res) => {
     res.send("<h1> long dep trai o home ne </h1>");
 })
 
