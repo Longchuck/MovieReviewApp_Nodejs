@@ -27,7 +27,7 @@ passwordResetTokenSchema.pre("save", async function (next) {
 });
 
 //compare token with hash token in dbs
-passwordResetTokenSchema.methods.compaireToken = async function (token) {
+passwordResetTokenSchema.methods.compareToken = async function (token) {
   const result = await bcrypt.compare(token, this.token);
   return result;
 };

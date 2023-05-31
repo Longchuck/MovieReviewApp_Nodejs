@@ -5,7 +5,7 @@ const EmailVerificationToken = require("../models/emailVerificationToken");
 
 const {isValidObjectId} = require("mongoose");
 const { generateOTP, generateMailTransporter } = require("../utils/mail");
-const { sendError, generateRandomByte } = require("../routes/helper");
+const { sendError, generateRandomByte } = require("../utils/helper");
 const { body } = require("express-validator");
 
 exports.Create = async (req, res) => {
@@ -65,7 +65,7 @@ exports.verifyEmail = async (req, res) => {
   const token = await EmailVerificationToken.findOne({owner: userId});
   if(!token) return res.json({error: "not found token!"});
 
-  const isMatchedToken = await token.compaireToken(OTP);
+  const isMatchedToken = await token.compareToken(OTP);
   if(!isMatchedToken) return sendError(res,"please submit a valid OTP!!");
 
   user.isVerified = true;
