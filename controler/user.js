@@ -1,10 +1,12 @@
-const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 const User = require("../models/user");
+const PasswordResetToken = require("../models/passwordResetToken");
 const EmailVerificationToken = require("../models/emailVerificationToken");
 
 const {isValidObjectId} = require("mongoose");
 const { generateOTP, generateMailTransporter } = require("../utils/mail");
-const { sendError } = require("../routes/helper");
+const { sendError, generateRandomByte } = require("../routes/helper");
+const { body } = require("express-validator");
 
 exports.Create = async (req, res) => {
   // console.log(req.body);
@@ -30,14 +32,7 @@ exports.Create = async (req, res) => {
   await newEmailVerificationToken.save();
 
   // send that OTP to user email
-  var transport = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
-    auth: {
-      user: "533e36f04dbc5f",
-      pass: "2d04a27ae14e39",
-    },
-  });
+  var transport = generateMailTransporter();
 
   transport.sendMail({
     from: "verification@reviewapp.com",
@@ -133,4 +128,37 @@ exports.resendEmailVerificationToken = async (req, res) => {
         message:
             "New OTP has been sent to your email account!!",
         });
+}
+
+exports.forgetPassword = async (req,res) => {
+  const {email} = req.body;
+
+  if(!email) return sendError(res,"please send invalid email!!");
+
+  const user = await User.findOne({email});
+  if(!user) return sendError(res,"not found user!!",404);
+
+  const alreadyExistToken = await PasswordResetToken.findOne({owner: user._id});
+  if (alreadyExistToken) return res.json({error : "Only after one hour you can request for another OTP"});
+
+  const token = await generateRandomByte();
+  const newPasswordResetToken = await PasswordResetToken({owner: user._id, token});
+  await newPasswordResetToken.save();
+
+  const resetPasswordUrl = `http://localhost:3000/reset-password?token=${token}&id=${user._id}`;
+
+  var transport = generateMailTransporter();
+
+  transport.sendMail({
+      from: "verification@reviewapp.com",
+      to: user.email,
+      subject: "Email verification",
+      html: `
+              <p>Your verification OTP</p>
+              <a href = "${resetPasswordUrl}">Change password </a>
+          `,
+  });
+
+  res.json({meesage: "link sent to your email"});
+
 }
