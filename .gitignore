@@ -106,4 +106,4 @@ public
 .DS_Store
 
 #mongoDb
-./db
+db/
