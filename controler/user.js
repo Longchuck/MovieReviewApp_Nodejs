@@ -23,13 +23,14 @@ exports.Create = async (req, res) => {
 
   // generate 6 digit token
   let OTP = generateOTP();
+  console.log("otp: "+OTP);
 
-  // store OTP inside out db
+  // store OTP inside our db
   const newEmailVerificationToken = new EmailVerificationToken({
     owner: newUser._id,
-    token: OTP,
+    token: OTP
   });
-
+  console.log(newEmailVerificationToken.OTP);
   await newEmailVerificationToken.save();
 
   // send that OTP to user email
@@ -154,7 +155,7 @@ exports.forgetPassword = async (req, res) => {
   });
   await newPasswordResetToken.save();
 
-  const resetPasswordUrl = `http://localhost:3000/reset-password?token=${token}&id=${user._id}`;
+  const resetPasswordUrl = `http://localhost:3000/auth/reset-password?token=${token}&id=${user._id}`;
 
   const transport = generateMailTransporter();
 

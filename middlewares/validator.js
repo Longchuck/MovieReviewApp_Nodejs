@@ -40,6 +40,12 @@ exports.signInValidator = [
     .withMessage("Password must be 8-20 character long!")
   ];
 
+exports.actorInfoValidate = [
+  check("name").trim().not().isEmpty().withMessage("Name is missing"),
+  check("about").trim().not().isEmpty().withMessage("about is missing"),
+  check("gender").trim().not().isEmpty().withMessage("gender is missing"),
+]
+
 exports.validate = (req,res,next) => {
     const error = validationResult(req).array();
     if (error.length){
