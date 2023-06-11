@@ -18,3 +18,14 @@ exports.generateRandomByte = () => {
 exports.handleNotFound = (req, res) => {
   this.sendError(res, "Not found", 404);
 };
+
+exports.fomatActor = (actor) => {
+  const {name, gender, about, _id, avatar} = actor;
+  return {
+    id: _id,
+    name: name,
+    about: about,
+    gender: gender,
+    avatar: avatar?.url,
+  }
+}

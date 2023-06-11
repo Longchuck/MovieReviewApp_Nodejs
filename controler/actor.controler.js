@@ -1,7 +1,7 @@
 const Actor = require("../models/actor");
 const cloudinary = require("cloudinary");
 const { isValidObjectId } = require("mongoose");
-const { sendError } = require("../utils/helper");
+const { sendError, fomatActor } = require("../utils/helper");
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -23,13 +23,7 @@ exports.createActor = async (req, res) => {
   newActor.avatar = { url: secure_url, public_id };
 
   await newActor.save();
-  res.status(201).send({
-    id: newActor._id,
-    name: name,
-    about: about,
-    gender: gender,
-    avatar: newActor.avatar?.url,
-  });
+  res.status(201).send(fomatActor(newActor));
 };
 
 exports.updateActor = async (req, res) => {
@@ -62,13 +56,7 @@ exports.updateActor = async (req, res) => {
   actor.about = about;
   actor.gender = gender;
   await actor.save();
-  res.status(200).send({
-    id: actor._id,
-    name: actor.name,
-    about: actor.about,
-    gender: actor.gender,
-    avatar: actor.avatar?.url,
-  });
+  res.status(200).send(fomatActor(actor));
 };
 
 //export function delete actor
@@ -96,3 +84,30 @@ exports.removeActor = async (req, res) => {
   res.json({ Message: "record deleted successfully" });
   
 };
+
+exports.searchActor = async (req, res) => {
+  const { query } = req;
+  console.log(query);
+  const results = await Actor.find({$text : {$search: `"${query.name}"`}});
+
+  const actors = results.map(actor => fomatActor(actor));
+  res.json(actors);
+};
+
+//get the latest actor
+exports.getLatestActor = async (req, res) => {
+  const results = await Actor.find().sort({ createdAt: -1 }).limit(12);
+
+  const actors = results.map(actor => fomatActor(actor));
+  res.json(actors);
+};
+
+//get single actor
+exports.getSingleActor = async (req, res) => {
+  const {id} = req.params;
+  if(!isValidObjectId(id)) return sendError(res,"Invalid request id");
+
+  const actor = await Actor.findById(id);
+  if(!actor) return sendError(res,"not found actor",404);
+  res.json(fomatActor(actor));
+}
