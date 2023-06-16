@@ -53,17 +53,16 @@ exports.validateMovie = [
   check("storyLine").trim().not().isEmpty().withMessage("storyLine is missing"),
   check("language").trim().not().isEmpty().withMessage("language is missing"),
   check("type").trim().not().isEmpty().withMessage("type is missing"),
-  check("releseDate").isDate().isEmpty().withMessage("releseDate is missing"),
+  check("releseDate").isDate().withMessage("releseDate is missing"),
   check("status")
     .isIn(["public", "private"])
-    .isEmpty()
     .withMessage("status must be public or private"),
   check("genres")
     .isArray()
     .withMessage("genres must be array of strings")
     .custom((value) => {
-      for (let g in value) {
-        if (!genres.includes(g)) throw error("genres must include");
+      for (let g of value) {
+        if (!genres.includes(g)) throw Error("genres must include");
       }
       return true;
     }),
@@ -71,47 +70,46 @@ exports.validateMovie = [
     .isArray({ min: 1 })
     .withMessage("tags must be array of strings")
     .custom((tags) => {
-      for (let tag in tags) {
+      for (let tag of tags) {
         if (typeof tag !== "string")
-          throw error("tags must be array of strings");
+          throw Error("tags must be array of strings");
       }
       return true;
     }),
   check("cast")
     .isArray()
-    .withMessage("genres must be array of objects")
+    .withMessage("cast must be array of objects")
     .custom((cast) => {
-      for (let c in cast) {
+      for (let c of cast) {
         if (!isValidObjectId(c.actor))
-          throw error("invalid object id inside cast");
-        if (!c.roleAs?.trim()) throw error("invalid roleAs inside cast");
+          throw Error("invalid object id inside cast");
+        if (!c.roleAs?.trim()) throw Error("invalid roleAs inside cast");
         if (typeof c.leadActor !== "boolean")
-          throw error("only accepted boolean values inside cast");
+          throw Error("only accepted boolean values inside cast");
       }
       return true;
     }),
   check("trailer")
     .isObject()
     .withMessage("trailer must be an objects with url and public_id")
-    .custom((url, public_id) => {
+    .custom(({ url, public_id }) => {
       try {
-        const result = URL(url);
-        if (!result.protocol.includes("http"))
-          throw error("invalid trailer url: " + url);
+        const result = new URL(url);
+        console.log(result);
+        if (!result.protocol.includes("http")) {
+          throw Error("invalid trailer url not have http ");
+        }
 
         const array = url.split("/");
-        const publicId = array[length - 1].split(".")[0];
-
-        if (publicId !== public_id)
-          throw error("invalid trailer public_id: " + public);
-
+        const publicId = array[array.length - 1].split(".")[0];
+        if (public_id !== publicId) throw Error("invalid trailer public_id");
         return true;
       } catch (error) {
-        throw error("invalid trailer url: " + url);
+        throw Error("invalid trailer url");
       }
     }),
-  check("poster").custom((_, req) => {
-    if (!req.file) throw error("missing file posters");
+  check("poster").custom((_, { req }) => {
+    if (!req.file) throw Error("missing file posters");
     return true;
   }),
 ];
@@ -119,7 +117,7 @@ exports.validateMovie = [
 exports.validate = (req, res, next) => {
   const error = validationResult(req).array();
   if (error.length) {
-    return res.json({ error: error[0].msg });
+    return res.status(500).json({ error: error });
   }
   next();
 };
