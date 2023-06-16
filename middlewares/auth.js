@@ -4,6 +4,7 @@ const User = require("../models/user");
 
 exports.isAuth = async (req, res, next) => {
   const token = req.headers?.authorization;
+  if(!token) return sendError(res, "Invalid token!");
 
   const jwtToken = token.split("Bearer ")[1];
 
@@ -16,5 +17,11 @@ exports.isAuth = async (req, res, next) => {
 
   req.user = user;
 
+  next();
+};
+
+exports.isAdmin = (req,res,next) => {
+  const {user} = req;
+  if(user.role !== "admin") return sendError(res, "unauthorized access!");
   next();
 };

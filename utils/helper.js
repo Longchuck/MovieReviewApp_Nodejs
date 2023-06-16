@@ -20,12 +20,23 @@ exports.handleNotFound = (req, res) => {
 };
 
 exports.fomatActor = (actor) => {
-  const {name, gender, about, _id, avatar} = actor;
+  const { name, gender, about, _id, avatar } = actor;
   return {
     id: _id,
     name: name,
     about: about,
     gender: gender,
     avatar: avatar?.url,
-  }
-}
+  };
+};
+
+exports.parseData = (req, res, next) => {
+  const { genres, tags, cast, writers, trailer } = req.body;
+
+  if(genres) req.body.genres = JSON.parse(genres);
+  if(tags) req.body.tags = JSON.parse(tags);
+  if(cast) req.body.cast = JSON.parse(cast);
+  if(writers) req.body.writers = JSON.parse(writers);
+  if(trailer) req.body.trailer = JSON.parse(trailer);
+  next();
+};

@@ -1,5 +1,5 @@
 const Actor = require("../models/actor");
-const cloudinary = require("cloudinary");
+const cloudinary = require("cloudinary").v2;
 const { isValidObjectId } = require("mongoose");
 const { sendError, fomatActor } = require("../utils/helper");
 cloudinary.config({
