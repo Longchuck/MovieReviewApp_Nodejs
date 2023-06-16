@@ -53,7 +53,7 @@ exports.validateMovie = [
   check("storyLine").trim().not().isEmpty().withMessage("storyLine is missing"),
   check("language").trim().not().isEmpty().withMessage("language is missing"),
   check("type").trim().not().isEmpty().withMessage("type is missing"),
-  check("releseDate").isDate().withMessage("releseDate is missing"),
+  check("releseDate").isDate(),
   check("status")
     .isIn(["public", "private"])
     .withMessage("status must be public or private"),
@@ -95,7 +95,6 @@ exports.validateMovie = [
     .custom(({ url, public_id }) => {
       try {
         const result = new URL(url);
-        console.log(result);
         if (!result.protocol.includes("http")) {
           throw Error("invalid trailer url not have http ");
         }
@@ -108,10 +107,10 @@ exports.validateMovie = [
         throw Error("invalid trailer url");
       }
     }),
-  check("poster").custom((_, { req }) => {
-    if (!req.file) throw Error("missing file posters");
-    return true;
-  }),
+  // check("poster").custom((_, { req }) => {
+  //   if (!req.file) throw Error("missing file posters");
+  //   return true;
+  // }),
 ];
 
 exports.validate = (req, res, next) => {

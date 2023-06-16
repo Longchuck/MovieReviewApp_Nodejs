@@ -10,7 +10,6 @@ const { sendError, generateRandomByte } = require("../utils/helper");
 const { body } = require("express-validator");
 
 exports.Create = async (req, res) => {
-  // console.log(req.body);
   const { name, email, password } = req.body;
 
   const oldUser = await User.findOne({ email });
@@ -23,14 +22,12 @@ exports.Create = async (req, res) => {
 
   // generate 6 digit token
   let OTP = generateOTP();
-  console.log("otp: "+OTP);
 
   // store OTP inside our db
   const newEmailVerificationToken = new EmailVerificationToken({
     owner: newUser._id,
     token: OTP
   });
-  console.log(newEmailVerificationToken.OTP);
   await newEmailVerificationToken.save();
 
   // send that OTP to user email

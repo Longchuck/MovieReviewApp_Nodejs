@@ -14,8 +14,6 @@ exports.createActor = async (req, res) => {
   const { file } = req;
 
   const newActor = await Actor({ name, about, gender });
-  // console.log(file);
-  // console.log(req);
   const { secure_url, public_id } = await cloudinary.uploader.upload(
     file.path,
     { gravity: "face", height: 500, width: 500, crop: "thumb" }
@@ -62,7 +60,6 @@ exports.updateActor = async (req, res) => {
 //export function delete actor
 exports.removeActor = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
   if (!isValidObjectId(id)) return sendError(res, "invalid id request!");
 
   const actor = await Actor.findById(id);
@@ -73,7 +70,6 @@ exports.removeActor = async (req, res) => {
   //remove old avatar if there was one!
   if (public_id) {
     const { result } = await cloudinary.uploader.destroy(public_id);
-    console.log(result);
     if (result != "ok") {
       return sendError(res, "could not remove old avatar");
     }
@@ -87,7 +83,6 @@ exports.removeActor = async (req, res) => {
 
 exports.searchActor = async (req, res) => {
   const { query } = req;
-  console.log(query);
   const results = await Actor.find({$text : {$search: `"${query.name}"`}});
 
   const actors = results.map(actor => fomatActor(actor));

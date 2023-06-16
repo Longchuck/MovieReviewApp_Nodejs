@@ -6,7 +6,6 @@ exports.generateOTP = (otpLength = 6) => {
     const randomValue = Math.round(Math.random() * 9);
     OTP += randomValue;
   }
-  console.log("otp 1: "+OTP);
   return OTP;
 };
 
