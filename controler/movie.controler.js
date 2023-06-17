@@ -245,3 +245,35 @@ exports.uploadMovieWithPoster = async (req,res) => {
   await movie.save();
   res.status(201).json({message: "movie update successfully"});
 };
+
+exports.removeMovie = async (req, res) => {
+  const { movieId } = req.params;
+
+  if (!isValidObjectId(movieId)) return sendError(res, "Invalid Movie ID!");
+
+  const movie = await Movie.findById(movieId);
+  if (!movie) return sendError(res, "Movie Not Found!", 404);
+
+  // check if there is poster or not.
+  // if yes then we need to remove that.
+
+  const posterId = movie.poster?.public_id;
+  if (posterId) {
+    const { result } = await cloudinary.uploader.destroy(posterId);
+    if (result !== "ok")
+      return sendError(res, "Could not remove poster from cloud!");
+  }
+
+  // removing trailer
+  const trailerId = movie.trailer?.public_id;
+  if (!trailerId) return sendError(res, "Could not find trailer in the cloud!");
+  const { result } = await cloudinary.uploader.destroy(trailerId, {
+    resource_type: "video",
+  });
+  if (result !== "ok")
+    return sendError(res, "Could not remove trailer from cloud!");
+
+  await Movie.findByIdAndDelete(movieId);
+
+  res.json({ message: "Movie removed successfully." });
+};
