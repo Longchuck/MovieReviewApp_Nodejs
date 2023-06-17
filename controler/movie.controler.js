@@ -277,3 +277,78 @@ exports.removeMovie = async (req, res) => {
 
   res.json({ message: "Movie removed successfully." });
 };
+
+exports.getMovies = async (req, res) => {
+  const { pageNo = 0, limit = 10 } = req.query;
+
+  const movies = await Movie.find({})
+    .sort({ createdAt: -1 })
+    .skip(parseInt(pageNo) * parseInt(limit))
+    .limit(parseInt(limit));
+
+  const results = movies.map((movie) => ({
+    id: movie._id,
+    title: movie.title,
+    poster: movie.poster?.url,
+    responsivePosters: movie.poster?.responsive,
+    genres: movie.genres,
+    status: movie.status,
+  }));
+
+  res.json({ movies: results });
+};
+
+exports.getMovieForUpdate = async (req, res) => {
+  const { movieId } = req.params;
+
+  if (!isValidObjectId(movieId)) return sendError(res, "Id is invalid!");
+
+  const movie = await Movie.findById(movieId).populate(
+    "director writers cast.actor"
+  );
+
+  res.json({
+    movie: {
+      id: movie._id,
+      title: movie.title,
+      storyLine: movie.storyLine,
+      poster: movie.poster?.url,
+      releseDate: movie.releseDate,
+      status: movie.status,
+      type: movie.type,
+      language: movie.language,
+      genres: movie.genres,
+      tags: movie.tags,
+      director: formatActor(movie.director),
+      writers: movie.writers.map((w) => formatActor(w)),
+      cast: movie.cast.map((c) => {
+        return {
+          id: c.id,
+          profile: formatActor(c.actor),
+          roleAs: c.roleAs,
+          leadActor: c.leadActor,
+        };
+      }),
+    },
+  });
+};
+
+exports.searchMovies = async (req, res) => {
+  const { title } = req.query;
+
+  if (!title.trim()) return sendError(res, "Invalid request!");
+
+  const movies = await Movie.find({ title: { $regex: title, $options: "i" } });
+  res.json({
+    results: movies.map((m) => {
+      return {
+        id: m._id,
+        title: m.title,
+        poster: m.poster?.url,
+        genres: m.genres,
+        status: m.status,
+      };
+    }),
+  });
+};
+
