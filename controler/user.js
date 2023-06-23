@@ -7,7 +7,6 @@ const EmailVerificationToken = require("../models/emailVerificationToken");
 const { isValidObjectId } = require("mongoose");
 const { generateOTP, generateMailTransporter } = require("../utils/mail");
 const { sendError, generateRandomByte } = require("../utils/helper");
-const { body } = require("express-validator");
 
 exports.Create = async (req, res) => {
   const { name, email, password } = req.body;
@@ -26,7 +25,7 @@ exports.Create = async (req, res) => {
   // store OTP inside our db
   const newEmailVerificationToken = new EmailVerificationToken({
     owner: newUser._id,
-    token: OTP
+    token: OTP,
   });
   await newEmailVerificationToken.save();
 
@@ -44,8 +43,11 @@ exports.Create = async (req, res) => {
   });
 
   res.status(201).json({
-    message:
-      "please verify your email. OTP has been sent to your email account!!",
+    user: {
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+    },
   });
 };
 
@@ -80,7 +82,18 @@ exports.verifyEmail = async (req, res) => {
             <p>Welcome to our app and thank for choosing us.</p>
         `,
   });
-  res.json({ message: "your email is verified" });
+  const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+  res.json({
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      token: jwtToken,
+      isVerified: user.isVerified,
+      role: user.role,
+    },
+    message: "Your email is verified.",
+  });
 };
 
 exports.resendEmailVerificationToken = async (req, res) => {
@@ -212,8 +225,9 @@ exports.signIn = async (req, res) => {
   const isMatchedPassword = await user.comparePassword(password);
   if (!isMatchedPassword) sendError(res, "wrong password");
 
-  const { _id, role, name } = user;
+  const { _id, role, name, isVerified } = user;
 
   const jwtToken = jwt.sign({ userId: _id }, process.env.JWT_SECRET);
-  res.json({ user: { id: user._id, role, name, email, token: jwtToken } });
+  res.json({ 
+    user: { id: user._id, role, name, email, token: jwtToken, isVerified} });
 };
