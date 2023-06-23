@@ -81,8 +81,6 @@ exports.RemoveReview = async (req, res) => {
 };
 exports.getReviewByMovie = async (req, res) => {
   const { movieId } = req.params;
-  const userId = req.user._id;
-
   if (!isValidObjectId(movieId)) return sendError(res, "Invalid review id");
 
   const movie = await Movie.findById(movieId)
@@ -111,5 +109,5 @@ exports.getReviewByMovie = async (req, res) => {
     };
   });
 
-  res.status(200).json(reviews);
+  res.status(200).json({reviews});
 };
