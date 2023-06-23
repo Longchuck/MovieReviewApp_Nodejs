@@ -10,6 +10,11 @@ const {
   getMovies,
   getMovieForUpdate,
   searchMovies,
+  getLatestUploads,
+  getSingleMovie,
+  getRelatedMovies,
+  getTopRatedMovies,
+  searchPublicMovies,
 } = require("../controler/movie.controler");
 const { validateMovie, validate } = require("../middlewares/validator");
 const { parseData } = require("../utils/helper");
@@ -32,17 +37,17 @@ router.post(
   validate,
   uploadMovie
 );
+// router.patch(
+//   "/update-movie-without-poster/:movieId",
+//   isAuth,
+//   isAdmin,
+//   // parseData,
+//   validateMovie,
+//   validate,
+//   uploadMovieWithoutPoster
+// );
 router.patch(
-  "/update-movie-without-poster/:movieId",
-  isAuth,
-  isAdmin,
-  // parseData,
-  validateMovie,
-  validate,
-  uploadMovieWithoutPoster
-);
-router.patch(
-  "/update-movie-with-poster/:movieId",
+  "/update/:movieId",
   isAuth,
   isAdmin,
   uploadImage.single("poster"),
@@ -57,5 +62,11 @@ router.get("/movies", isAuth, isAdmin, getMovies);
 router.get("/for-update/:movieId", isAuth, isAdmin, getMovieForUpdate);
 router.get("/search", isAuth, isAdmin, searchMovies);
 
+// for normal users
+router.get("/latest-uploads", getLatestUploads);
+router.get("/single/:movieId", getSingleMovie);
+router.get("/related/:movieId", getRelatedMovies);
+router.get("/top-rated", getTopRatedMovies);
+router.get("/search-public", searchPublicMovies);
 
 module.exports = router;

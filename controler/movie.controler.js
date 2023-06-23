@@ -1,6 +1,14 @@
 const moongoose = require("mongoose");
 const cloudinary = require("cloudinary").v2;
-const { sendError } = require("../utils/helper");
+const {
+  sendError,
+  getAverageRatings,
+  topRatedMoviesPipeline,
+  relatedMovieAggregation,
+  averageRatingPipeline,
+  formatActor,
+} = require("../utils/helper");
+const Review = require("../models/review");
 const Movie = require("../models/movie.model");
 const { isValidObjectId } = require("mongoose");
 cloudinary.config({
@@ -35,7 +43,7 @@ exports.uploadMovie = async (req, res) => {
     genres,
     tags,
     cast,
-    writers, 
+    writers,
     trailer,
     language,
   } = body;
@@ -103,13 +111,12 @@ exports.uploadMovie = async (req, res) => {
   });
 };
 
-exports.uploadMovieWithoutPoster = async (req, res) =>{
-  const {movieId} = req.params;
-  if(!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
+exports.uploadMovieWithoutPoster = async (req, res) => {
+  const { movieId } = req.params;
+  if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
 
   const movie = await Movie.findById(movieId);
-  if(!movie) return sendError(res, "Movie not found", 404);
-  console.log(movie);
+  if (!movie) return sendError(res, "Movie not found", 404);
 
   const {
     title,
@@ -121,7 +128,7 @@ exports.uploadMovieWithoutPoster = async (req, res) =>{
     genres,
     tags,
     cast,
-    writers, 
+    writers,
     trailer,
     language,
   } = req.body;
@@ -137,7 +144,6 @@ exports.uploadMovieWithoutPoster = async (req, res) =>{
   movie.trailer = trailer;
   movie.language = language;
 
-
   if (director) {
     if (!isValidObjectId(director))
       return sendError(res, "Invalid director id");
@@ -152,17 +158,17 @@ exports.uploadMovieWithoutPoster = async (req, res) =>{
   }
 
   await movie.save();
-  res.status(201).json({message: "movie update successfully"});
+  res.status(201).json({ message: "movie update successfully" });
 };
 
-exports.uploadMovieWithPoster = async (req,res) => {
-  const {movieId} = req.params;
-  if(!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
-  
-  const {file, body} = req; 
-  if(!file) return sendError(res, "Invalid file image poster"); 
+exports.uploadMovieWithPoster = async (req, res) => {
+  const { movieId } = req.params;
+  if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
+
+  const { file, body } = req;
+  // if (!file) return sendError(res, "Invalid file image poster");
   const movie = await Movie.findById(movieId);
-  if(!movie) return sendError(res, "Movie not found", 404);
+  if (!movie) return sendError(res, "Movie not found", 404);
 
   const {
     title,
@@ -174,7 +180,7 @@ exports.uploadMovieWithPoster = async (req,res) => {
     genres,
     tags,
     cast,
-    writers, 
+    writers,
     trailer,
     language,
   } = body;
@@ -190,7 +196,6 @@ exports.uploadMovieWithPoster = async (req,res) => {
   movie.trailer = trailer;
   movie.language = language;
 
-
   if (director) {
     if (!isValidObjectId(director))
       return sendError(res, "Invalid director id");
@@ -205,45 +210,56 @@ exports.uploadMovieWithPoster = async (req,res) => {
   }
 
   // update poster
-  // removing poster from cloud if there is any.
-  const posterID = movie.poster?.public_id;
-  if (posterID) {
-    const { result } = await cloudinary.uploader.destroy(posterID);
-    if (result !== "ok") {
-      return sendError(res, "Could not update poster at the moment!");
-    }
-
-    // uploading poster
-    const {
-      secure_url: url,
-      public_id,
-      responsive_breakpoints,
-    } = await cloudinary.uploader.upload(file.path, {
-      transformation: {
-        width: 1280,
-        height: 720,
-      },
-      responsive_breakpoints: {
-        create_derived: true,
-        max_width: 640,
-        max_images: 3,
-      },
-    });
-
-    const finalPoster = { url, public_id, responsive: [] };
-
-    const { breakpoints } = responsive_breakpoints[0];
-    if (breakpoints.length) {
-      for (let imgObj of breakpoints) {
-        const { secure_url } = imgObj;
-        finalPoster.responsive.push(secure_url);
+  if(file){
+    // removing poster from cloud if there is any.
+    const posterID = movie.poster?.public_id;
+    if (posterID) {
+      const { result } = await cloudinary.uploader.destroy(posterID);
+      if (result !== "ok") {
+        return sendError(res, "Could not update poster at the moment!");
       }
-    }
 
-    movie.poster = finalPoster;
+      // uploading poster
+      const {
+        secure_url: url,
+        public_id,
+        responsive_breakpoints,
+      } = await cloudinary.uploader.upload(file.path, {
+        transformation: {
+          width: 1280,
+          height: 720,
+        },
+        responsive_breakpoints: {
+          create_derived: true,
+          max_width: 640,
+          max_images: 3,
+        },
+      });
+
+      const finalPoster = { url, public_id, responsive: [] };
+
+      const { breakpoints } = responsive_breakpoints[0];
+      if (breakpoints.length) {
+        for (let imgObj of breakpoints) {
+          const { secure_url } = imgObj;
+          finalPoster.responsive.push(secure_url);
+        }
+      }
+
+      movie.poster = finalPoster;
+    }
   }
   await movie.save();
-  res.status(201).json({message: "movie update successfully"});
+  res.status(200).json({
+    message: "movie update successfully",
+    movie: {
+      id: movie._id,
+      title: movie.title,
+      poster: movie.poster?.url,
+      genres: movie.genres,
+      status: movie.status,
+    },
+  });
 };
 
 exports.removeMovie = async (req, res) => {
@@ -352,3 +368,171 @@ exports.searchMovies = async (req, res) => {
   });
 };
 
+exports.getLatestUploads = async (req, res) => {
+  const { limit = 5 } = req.query;
+
+  const results = await Movie.find({ status: "public" })
+    .sort("-createdAt")
+    .limit(parseInt(limit));
+
+  const movies = results.map((m) => {
+    return {
+      id: m._id,
+      title: m.title,
+      storyLine: m.storyLine,
+      poster: m.poster?.url,
+      trailer: m.trailer?.url,
+    };
+  });
+  res.json({ movies });
+};
+
+exports.getSingleMovie = async (req, res) => {
+  const { movieId } = req.params;
+
+  // mongoose.Types.ObjectId(movieId)
+
+  if (!isValidObjectId(movieId))
+    return sendError(res, "Movie id is not valid!");
+
+  const movie = await Movie.findById(movieId).populate(
+    "director writers cast.actor"
+  );
+
+  const [aggregatedResponse] = await Review.aggregate(
+    averageRatingPipeline(movie._id)
+  );
+  
+  const reviews = {};
+
+  if (aggregatedResponse) {
+    const { ratingAvg, reviewCount } = aggregatedResponse;
+    reviews.ratingAvg = parseFloat(ratingAvg).toFixed(1);
+    reviews.reviewCount = reviewCount;
+  }
+
+  const {
+    _id: id,
+    title,
+    storyLine,
+    cast,
+    writers,
+    director,
+    releseDate,
+    genres,
+    tags,
+    language,
+    poster,
+    trailer,
+    type,
+  } = movie;
+
+  res.json({
+    movie: {
+      id,
+      title,
+      storyLine,
+      releseDate,
+      genres,
+      tags,
+      language,
+      type,
+      poster: poster?.url,
+      trailer: trailer?.url,
+      cast: cast.map((c) => ({
+        id: c._id,
+        profile: {
+          id: c.actor._id,
+          name: c.actor.name,
+          avatar: c.actor?.avatar?.url,
+        },
+        leadActor: c.leadActor,
+        roleAs: c.roleAs,
+      })),
+      writers: writers.map((w) => ({
+        id: w._id,
+        name: w.name,
+      })),
+      director: {
+        id: director._id,
+        name: director.name,
+      },
+      reviews: { ...reviews },
+    },
+  });
+};
+
+exports.getRelatedMovies = async (req, res) => {
+  const { movieId } = req.params;
+  if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id!");
+
+  const movie = await Movie.findById(movieId);
+
+  const movies = await Movie.aggregate(
+    relatedMovieAggregation(movie.tags, movie._id)
+  );
+
+  const mapMovies = async (m) => {
+    const reviews = await getAverageRatings(m._id);
+    return {
+      id: m._id,
+      title: m.title,
+      poster: m.poster,
+      reviews: { ...reviews },
+    };
+  };
+  const relatedMovies = await Promise.all(movies.map(mapMovies));
+
+  res.json({ movies: relatedMovies });
+};
+
+exports.getTopRatedMovies = async (req, res) => {
+  const { type = "Film" } = req.query;
+
+  const movies = await Movie.aggregate(topRatedMoviesPipeline(type));
+
+  const mapMovies = async (m) => {
+    const reviews = await getAverageRatings(m._id);
+
+    return {
+      id: m._id,
+      title: m.title,
+      poster: m.poster,
+      responsivePosters: m.responsivePosters,
+      reviews: { ...reviews },
+    };
+  };
+
+  const topRatedMovies = await Promise.all(movies.map(mapMovies));
+
+  res.json({ movies: topRatedMovies });
+};
+
+exports.searchPublicMovies = async (req, res) => {
+  const { title } = req.query;
+
+  if (!title.trim()) return sendError(res, "Invalid request!");
+
+  const movies = await Movie.find({
+    title: { $regex: title, $options: "i" },
+    status: "public",
+  });
+
+  const mapMovies = async (m) => {
+    const reviews = await getAverageRatings(m._id);
+
+    return {
+      id: m._id,
+      title: m.title,
+      poster: m.poster?.url,
+      responsivePosters: m.poster?.responsive,
+      reviews: { ...reviews },
+    };
+  };
+
+  const results = await Promise.all(movies.map(mapMovies));
+
+  res.json({
+    results,
+  });
+};

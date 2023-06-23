@@ -1,7 +1,7 @@
 const Actor = require("../models/actor");
 const cloudinary = require("cloudinary").v2;
 const { isValidObjectId } = require("mongoose");
-const { sendError, fomatActor } = require("../utils/helper");
+const { sendError, formatActor } = require("../utils/helper");
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -21,7 +21,7 @@ exports.createActor = async (req, res) => {
   newActor.avatar = { url: secure_url, public_id };
 
   await newActor.save();
-  res.status(201).send(fomatActor(newActor));
+  res.status(201).send(formatActor(newActor));
 };
 
 exports.updateActor = async (req, res) => {
@@ -54,7 +54,7 @@ exports.updateActor = async (req, res) => {
   actor.about = about;
   actor.gender = gender;
   await actor.save();
-  res.status(200).send(fomatActor(actor));
+  res.status(200).send(formatActor(actor));
 };
 
 //export function delete actor
@@ -85,7 +85,7 @@ exports.searchActor = async (req, res) => {
   const { query } = req;
   const results = await Actor.find({$text : {$search: `"${query.name}"`}});
 
-  const actors = results.map(actor => fomatActor(actor));
+  const actors = results.map(actor => formatActor(actor));
   res.json(actors);
 };
 
@@ -93,7 +93,7 @@ exports.searchActor = async (req, res) => {
 exports.getLatestActor = async (req, res) => {
   const results = await Actor.find().sort({ createdAt: -1 }).limit(12);
 
-  const actors = results.map(actor => fomatActor(actor));
+  const actors = results.map(actor => formatActor(actor));
   res.json(actors);
 };
 
@@ -104,7 +104,7 @@ exports.getSingleActor = async (req, res) => {
 
   const actor = await Actor.findById(id);
   if(!actor) return sendError(res,"not found actor",404);
-  res.json(fomatActor(actor));
+  res.json(formatActor(actor));
 }
 
 exports.getActors = async (req, res) => {
@@ -115,7 +115,7 @@ exports.getActors = async (req, res) => {
     .skip(parseInt(pageNo) * parseInt(limit))
     .limit(parseInt(limit));
 
-  const profiles = actors.map((actor) => fomatActor(actor));
+  const profiles = actors.map((actor) => formatActor(actor));
   res.json({
     profiles,
   });
