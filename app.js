@@ -28,7 +28,7 @@ app.use("/*", handleNotFound);
 
 app.use(errorHandler)
 
-app.post("/home",
+app.get("/",
   (req, res) => {
     res.send("<h1>Hello I am from your backend about</h1>");
   });
