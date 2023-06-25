@@ -13,6 +13,7 @@ const {
   getRelatedMovies,
   getTopRatedMovies,
   searchPublicMovies,
+  updateMovie,
 } = require("../controler/movie.controler");
 const { validateMovie, validate, validateTrailer } = require("../middlewares/validator");
 const { parseData } = require("../utils/helper");
@@ -44,7 +45,7 @@ router.patch(
   parseData,
   validateMovie,
   validate,
-  uploadMovie
+  updateMovie
 );
 
 router.delete("/:movieId", isAuth, isAdmin, removeMovie);

@@ -111,7 +111,7 @@ exports.uploadMovie = async (req, res) => {
   });
 };
 
-exports.uploadMovie = async (req, res) => {
+exports.updateMovie = async (req, res) => {
   const { movieId } = req.params;
   if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
 
