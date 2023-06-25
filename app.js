@@ -28,10 +28,9 @@ app.use("/*", handleNotFound);
 
 app.use(errorHandler)
 
-app.get("/",
-  (req, res) => {
-    res.send("<h1>Hello I am from your backend about</h1>");
-  });
+app.get("/", (req, res) => {
+  res.send("<h1>Hello I am from your backend about</h1>");
+});
 
 
 

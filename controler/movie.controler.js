@@ -111,10 +111,17 @@ exports.uploadMovie = async (req, res) => {
   });
 };
 
-exports.uploadMovieWithoutPoster = async (req, res) => {
+exports.uploadMovie = async (req, res) => {
   const { movieId } = req.params;
   if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
 
+  const { file} = req;
+  console.log("file");
+  console.log(file);
+  console.log("req.body");
+  console.log(req.body);
+
+  // if (!file) return sendError(res, "Invalid file image poster");
   const movie = await Movie.findById(movieId);
   if (!movie) return sendError(res, "Movie not found", 404);
 
@@ -141,59 +148,6 @@ exports.uploadMovieWithoutPoster = async (req, res) => {
   movie.genres = genres;
   movie.tags = tags;
   movie.cast = cast;
-  movie.trailer = trailer;
-  movie.language = language;
-
-  if (director) {
-    if (!isValidObjectId(director))
-      return sendError(res, "Invalid director id");
-    movie.director = director;
-  }
-  if (writers) {
-    for (let writerId of writers) {
-      if (!isValidObjectId(writerId))
-        return sendError(res, "Invalid writer id");
-    }
-    movie.writers = writers;
-  }
-
-  await movie.save();
-  res.status(201).json({ message: "movie update successfully" });
-};
-
-exports.uploadMovieWithPoster = async (req, res) => {
-  const { movieId } = req.params;
-  if (!isValidObjectId(movieId)) return sendError(res, "Invalid movie id");
-
-  const { file, body } = req;
-  // if (!file) return sendError(res, "Invalid file image poster");
-  const movie = await Movie.findById(movieId);
-  if (!movie) return sendError(res, "Movie not found", 404);
-
-  const {
-    title,
-    storyLine,
-    director,
-    releseDate,
-    status,
-    type,
-    genres,
-    tags,
-    cast,
-    writers,
-    trailer,
-    language,
-  } = body;
-
-  movie.title = title;
-  movie.storyLine = storyLine;
-  movie.releseDate = releseDate;
-  movie.status = status;
-  movie.type = type;
-  movie.genres = genres;
-  movie.tags = tags;
-  movie.cast = cast;
-  movie.trailer = trailer;
   movie.language = language;
 
   if (director) {

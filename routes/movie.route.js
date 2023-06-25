@@ -4,8 +4,6 @@ const { uploadVideo, uploadImage } = require("../middlewares/multer");
 const {
   uploadTrailer,
   uploadMovie,
-  uploadMovieWithoutPoster,
-  uploadMovieWithPoster,
   removeMovie,
   getMovies,
   getMovieForUpdate,
@@ -16,7 +14,7 @@ const {
   getTopRatedMovies,
   searchPublicMovies,
 } = require("../controler/movie.controler");
-const { validateMovie, validate } = require("../middlewares/validator");
+const { validateMovie, validate, validateTrailer } = require("../middlewares/validator");
 const { parseData } = require("../utils/helper");
 const router = express.Router();
 
@@ -34,18 +32,10 @@ router.post(
   uploadImage.single("poster"),
   parseData,
   validateMovie,
+  validateTrailer,
   validate,
   uploadMovie
 );
-// router.patch(
-//   "/update-movie-without-poster/:movieId",
-//   isAuth,
-//   isAdmin,
-//   // parseData,
-//   validateMovie,
-//   validate,
-//   uploadMovieWithoutPoster
-// );
 router.patch(
   "/update/:movieId",
   isAuth,
@@ -54,7 +44,7 @@ router.patch(
   parseData,
   validateMovie,
   validate,
-  uploadMovieWithPoster
+  uploadMovie
 );
 
 router.delete("/:movieId", isAuth, isAdmin, removeMovie);
